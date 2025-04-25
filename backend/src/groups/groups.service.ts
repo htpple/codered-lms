@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { Group, Prisma } from '@prisma/client';
-import { NotFoundException } from '@nestjs/common';
 
 type GroupWithStudents = Prisma.GroupGetPayload<{
   include: { students: { select: { id: true; email: true } } };
@@ -29,16 +28,22 @@ export class GroupsService {
     });
   }
 
-  async findOne(id: number): Promise<GroupWithStudents> {
+  async findOne(groupId: number): Promise<GroupWithStudents> {
     try {
       return await this.prisma.group.findUniqueOrThrow({
-        where: { id },
+        where: { id: groupId },
         include: {
           students: { select: { id: true, email: true } },
         },
       });
-    } catch {
-      throw new NotFoundException(`Группа с id=${id} не найдена`);
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Группа с id=${groupId} не найдена`);
+      }
+      throw e;
     }
   }
 
@@ -60,6 +65,15 @@ export class GroupsService {
       include: {
         students: { select: { id: true, email: true } },
       },
+    });
+  }
+
+  async rename(groupId: number, newName: string): Promise<Group> {
+    // убедимся, что группа существует (чтобы бросить 404, а не молча создать)
+    await this.findOne(groupId);
+    return this.prisma.group.update({
+      where: { id: groupId },
+      data: { name: newName },
     });
   }
 }

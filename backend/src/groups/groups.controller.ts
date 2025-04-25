@@ -40,4 +40,10 @@ export class GroupsController {
   updateMembers(@Param('id') id: string, @Body() dto: UpdateGroupDto) {
     return this.groupsService.updateMembers(Number(id), dto.studentIds);
   }
+
+  @Roles('ADMIN')
+  @Patch(':id')
+  rename(@Param('id', ParseIntPipe) id: number, @Body('name') name: string) {
+    return this.groupsService.rename(id, name);
+  }
 }

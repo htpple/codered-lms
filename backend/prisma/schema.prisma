@@ -30,4 +30,33 @@ model Group {
 
   // связь «группа → множество студентов»
   students  User[]   @relation("GroupMembers")
+  lessons   Lesson[]
+}
+
+model Subject {
+  id        Int      @id @default(autoincrement())
+  // человекочитаемое название, уникально
+  name      String   @unique
+  // ссылка на уроки этого предмета
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id           Int       @id @default(autoincrement())
+  
+  // к какой группе относится урок
+  group        Group     @relation(fields: [groupId], references: [id])
+  groupId      Int
+
+  // по какому предмету
+  subject      Subject   @relation(fields: [subjectId], references: [id])
+  subjectId    Int
+
+  // когда стартует урок
+  scheduledAt  DateTime
+
+  // опционально: тема урока
+  topic        String?
+
+  createdAt    DateTime  @default(now())
 }
