@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lms
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+      - "5555:5555"  
+    depends_on:
+      - db
+
+    env_file:
+      - ./backend/.env
+    
+    environment:
+      - DATABASE_URL
+      - JWT_SECRET
+
+    # --- ниже добавляем для dev-режима ---
+    volumes:
+      - ./backend:/app           # смонтировать код
+      - /app/node_modules       # чтобы node_modules оставались в контейнере
+    command: npm run start:dev  # live‑reload NestJS
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    # --- и для фронта тоже ---
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev        # hot‑reload Nuxt3
+
+volumes:
+  db-data:
