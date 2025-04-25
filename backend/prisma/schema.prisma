@@ -1,0 +1,33 @@
+// prisma/schema.prisma
+
+// 1. Где лежит БД и как к ней подключаться
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // берёт из backend/.env
+}
+
+// 2. Генератор TypeScript‑клиента Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("STUDENT")
+  createdAt DateTime @default(now())
+
+  // связь «студент → группа» (группа может быть null для преподавателя)
+  group     Group?   @relation("GroupMembers", fields: [groupId], references: [id])
+  groupId   Int?
+}
+
+model Group {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+
+  // связь «группа → множество студентов»
+  students  User[]   @relation("GroupMembers")
+}
