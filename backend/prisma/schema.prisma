@@ -19,8 +19,9 @@ model User {
   createdAt DateTime @default(now())
 
   // связь «студент → группа» (группа может быть null для преподавателя)
-  group     Group?   @relation("GroupMembers", fields: [groupId], references: [id])
-  groupId   Int?
+  group      Group?       @relation("GroupMembers", fields: [groupId], references: [id])
+  groupId    Int?
+  attendance Attendance[]
 }
 
 model Group {
@@ -29,34 +30,57 @@ model Group {
   createdAt DateTime @default(now())
 
   // связь «группа → множество студентов»
-  students  User[]   @relation("GroupMembers")
-  lessons   Lesson[]
+  students User[]   @relation("GroupMembers")
+  lessons  Lesson[]
 }
 
 model Subject {
-  id        Int      @id @default(autoincrement())
+  id      Int      @id @default(autoincrement())
   // человекочитаемое название, уникально
-  name      String   @unique
+  name    String   @unique
   // ссылка на уроки этого предмета
-  lessons   Lesson[]
+  lessons Lesson[]
 }
 
 model Lesson {
-  id           Int       @id @default(autoincrement())
-  
+  id Int @id @default(autoincrement())
+
   // к какой группе относится урок
-  group        Group     @relation(fields: [groupId], references: [id])
-  groupId      Int
+  group   Group @relation(fields: [groupId], references: [id])
+  groupId Int
 
   // по какому предмету
-  subject      Subject   @relation(fields: [subjectId], references: [id])
-  subjectId    Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int
 
   // когда стартует урок
-  scheduledAt  DateTime
+  scheduledAt DateTime
 
   // опционально: тема урока
-  topic        String?
+  topic String?
 
-  createdAt    DateTime  @default(now())
+  createdAt  DateTime     @default(now())
+  attendance Attendance[]
+}
+
+model Attendance {
+  /// авто-инкрементный ID
+  id Int @id @default(autoincrement())
+
+  /// к какому уроку относится отметка
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int
+
+  /// за какого студента
+  student   User @relation(fields: [studentId], references: [id])
+  studentId Int
+
+  /// пришёл ли студент
+  present Boolean
+
+  /// оценка по 10-балльной шкале (опционально)
+  grade Int?
+
+  /// чтобы нельзя было дважды отмечать одного и того же студента для одного урока
+  @@unique([lessonId, studentId])
 }
